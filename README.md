@@ -1,6 +1,8 @@
 # api_yamdb
 api_yamdb
 
+For Test
+
 ### Django REST API project.
 
 >##### Installing
