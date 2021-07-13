@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Profile
+from api.models import Profile
 
 
 class ProfileAdmin(admin.ModelAdmin):
