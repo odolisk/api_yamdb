@@ -18,7 +18,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'rest_framework',
     'django_filters',
-    'api'
+    'api.apps.ApiConfig',
 )
 
 MIDDLEWARE = (
@@ -73,6 +73,8 @@ AUTH_PASSWORD_VALIDATORS = (
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 )
+
+AUTH_USER_MODEL = 'api.User'
 
 LANGUAGE_CODE = 'ru-ru'
 
