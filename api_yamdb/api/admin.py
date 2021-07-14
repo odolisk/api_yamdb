@@ -4,8 +4,9 @@ from api.models import User
 
 
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'username', 'email', 'bio', 'role')
-    search_fields = ('username',)
+    list_display = ('pk', 'username', 'email', 'bio',
+                    'role', 'is_active', 'is_staff')
+    search_fields = ('email',)
 
 
 admin.site.register(User, UserAdmin)

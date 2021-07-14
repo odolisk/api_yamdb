@@ -1,13 +1,8 @@
 from rest_framework.routers import DefaultRouter
-from rest_framework_simplejwt.views import (TokenObtainPairView,
-                                            TokenRefreshView)
 
 from django.urls import include, path
 
-from api.views import CreateUser, YamDBTokenObtainPairView
-
-# from api.views import
-# CommentViewSet, FollowViewSet, GroupViewSet, PostViewSet
+from api.views import CreateUser, obtain_token
 
 API_VERSION = 'v1'
 
@@ -26,10 +21,7 @@ urlpatterns = (
          CreateUser.as_view(),
          name='create_user'),
     path(f'{API_VERSION}/token/',
-         YamDBTokenObtainPairView.as_view(),
-         name='token_obtain_pair'),
-    path(f'{API_VERSION}/token/refresh/',
-         TokenRefreshView.as_view(),
-         name='token_refresh'),
+         obtain_token,
+         name='token_obtain'),
     path(f'{API_VERSION}/', include(v1_router.urls)),
 )
