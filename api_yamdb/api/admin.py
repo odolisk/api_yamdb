@@ -4,7 +4,7 @@ from api.models import User
 
 
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'username', 'email', 'bio',
+    list_display = ('pk', 'username', 'email',
                     'role', 'is_active', 'is_staff')
     search_fields = ('email',)
 

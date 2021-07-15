@@ -2,11 +2,10 @@ from django.contrib.auth.models import (
     AbstractBaseUser, BaseUserManager, PermissionsMixin)
 from django.db import models
 
-
 USER_ROLES = (
-    ('user', 'User role'),
-    ('moderator', 'Moderator role'),
-    ('admin', 'Admin role')
+    ('user', 'User'),
+    ('moderator', 'Moderator'),
+    ('admin', 'Admin')
 )
 
 
@@ -52,14 +51,30 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
     first_name = models.CharField('first name', max_length=150, blank=True)
     last_name = models.CharField('last name', max_length=150, blank=True)
-    email = models.EmailField('email address', unique=True)
-    bio = models.TextField(max_length=500, blank=True)
+    email = models.EmailField(
+        'email address',
+        unique=True,
+        help_text='Email address. Must be unique',
+        error_messages={
+            'unique': 'A user with that email already exists.',
+        },)
+    bio = models.TextField(
+        max_length=500,
+        blank=True,
+        help_text='About me')
     role = models.CharField(
         max_length=50,
         choices=USER_ROLES,
-        default=USER_ROLES[0])
-    is_active = models.BooleanField('active', default=True)
-    is_staff = models.BooleanField('staff', default=False)
+        default=USER_ROLES[0],
+        help_text='User role')
+    is_active = models.BooleanField(
+        'active',
+        default=True,
+        help_text='Can use app or none')
+    is_staff = models.BooleanField(
+        'staff',
+        default=False,
+        help_text='Allow to login in django admin')
 
     objects = UserManager()
 

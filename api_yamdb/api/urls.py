@@ -2,12 +2,12 @@ from rest_framework.routers import DefaultRouter
 
 from django.urls import include, path
 
-from api.views import CreateUser, obtain_token
+from api.views import CreateUser, obtain_token, UserViewSet
 
 API_VERSION = 'v1'
 
 v1_router = DefaultRouter()
-# v1_router.register('token', UserViewSet, basename='users')
+v1_router.register('users', UserViewSet, basename='users')
 # v1_router.register(
 #     r'posts/(?P<post_id>\d+)/comments',
 #     CommentViewSet,
