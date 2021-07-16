@@ -8,7 +8,7 @@ API_VERSION = 'v1'
 
 v1_router = DefaultRouter()
 v1_router.register('users', UserViewSet, basename='users')
-# v1_router.register(
+v1_router.register('users/<str:username>', UserViewSet, 'user')
 #     r'posts/(?P<post_id>\d+)/comments',
 #     CommentViewSet,
 #     basename='comments'
