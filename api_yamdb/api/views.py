@@ -91,9 +91,12 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     filterset_fields = ('username',)
 
-    @action(detail=False, methods=('get', 'patch'),
+    @action(methods=('get', 'patch'), detail=False,
             permission_classes=(permissions.IsAuthenticated,))
     def me(self, request):
+        """
+        Return user info on GET, and correct user profile on PATCH.
+        """
         user = request.user
         if request.method == 'get':
             serializer = UserSerializer(user)
@@ -106,7 +109,12 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def retrieve(self, request, pk=None):
-        user = request.get_context_data()
-        
-        print(user)
+    @action(methods=('get',), detail=False, url_path='(?P<username>\w+)',
+            permission_classes=(IsAdmin,))
+    def get_by_username(self, request, username):
+        """
+        Get user info by username.
+        """
+        user = get_object_or_404(User, username=username)
+        data = UserSerializer(user, context={'request': request}).data
+        return Response(data, status=status.HTTP_200_OK)
