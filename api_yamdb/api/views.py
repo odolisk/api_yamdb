@@ -95,5 +95,13 @@ class UserViewSet(viewsets.ModelViewSet):
             permission_classes=(permissions.IsAuthenticated,))
     def me(self, request):
         user = request.user
-        serializer = UserSerializer(user)  # (data=request.user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        if request.method == 'get':
+            serializer = UserSerializer(user)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            serializer = UserSerializer(user, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST)
