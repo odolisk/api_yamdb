@@ -39,7 +39,8 @@ class CreateUser(APIView):
             email=email,
             username=email,
             password=password,
-            is_active=False
+            is_active=False,
+            role='user'
         )
         send_mail('Request code for YamDB',
                   f'Your confirmation_code: {password}',
@@ -90,6 +91,7 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     filterset_fields = ('username',)
+    permission_classes = (IsAdmin,)
 
     @action(methods=('get', 'patch'), detail=False,
             permission_classes=(permissions.IsAuthenticated,))
@@ -98,7 +100,7 @@ class UserViewSet(viewsets.ModelViewSet):
         Return user info on GET, and correct user profile on PATCH.
         """
         user = request.user
-        if request.method == 'get':
+        if request.method == 'GET':
             serializer = UserSerializer(user)
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
@@ -109,12 +111,22 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(methods=('get',), detail=False, url_path='(?P<username>\w+)',
-            permission_classes=(IsAdmin,))
-    def get_by_username(self, request, username):
+    @action(methods=('get', 'patch', 'delete'), detail=False,
+            url_path=r'(?P<username>\w+)', permission_classes=(IsAdmin,))
+    def get_update_delete_by_username(self, request, username):
         """
-        Get user info by username.
+        Get, change user info or delete user by username.
         """
         user = get_object_or_404(User, username=username)
-        data = UserSerializer(user, context={'request': request}).data
-        return Response(data, status=status.HTTP_200_OK)
+        if request.method == 'GET':
+            serializer = UserSerializer(user)
+        elif request.method == 'PATCH':
+            serializer = UserSerializer(user, data=request.data, partial=True)
+            if not serializer.is_valid():
+                return Response(
+                    serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            serializer.save()
+        else:
+            user.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(serializer.data, status=status.HTTP_200_OK)

@@ -1,9 +1,11 @@
 from django.contrib import admin
+from django.contrib.auth import get_user_model
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from api.models import User
+User = get_user_model()
 
 
-class UserAdmin(admin.ModelAdmin):
+class UserAdmin(BaseUserAdmin):
     list_display = ('pk', 'username', 'email',
                     'role', 'is_active', 'is_staff')
     search_fields = ('email',)
