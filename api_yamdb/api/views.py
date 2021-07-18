@@ -12,9 +12,15 @@ from django.shortcuts import get_object_or_404
 from django.utils.crypto import get_random_string
 from django.views.decorators.csrf import csrf_exempt
 
-from api.permissions import IsAdmin, IsAuthorOrReadOnly, IsModerator
-from api.serializers import UserSerializer
+from django_filters.rest_framework import DjangoFilterBackend
 
+from .filters import TitleFilter
+from .models import Category, Title, Genre
+from .permissions import IsAdmin, IsAuthorOrReadOnly, IsModerator
+from .serializers import (
+    CategorySerializer, GenreSerializer, TitleCreateSerializer,
+    TitleReadSerializer, UserSerializer
+)
 
 ALLOWED_CHARS = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 FROM_EMAIL = 'admin@YamDb.com'
@@ -130,3 +136,40 @@ class UserViewSet(viewsets.ModelViewSet):
             user.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ListCreateDestroyAPIView(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet
+):
+    pass
+
+
+class CategoryViewSet(ListCreateDestroyAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+    lookup_field = 'slug'
+
+
+class GenreViewSet(ListCreateDestroyAPIView):
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+    lookup_field = 'slug'
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+
+    queryset = Title.objects.all()
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = TitleFilter
+
+    def get_serializer_class(self):
+        if self.action in ('create', 'update', 'partial_update'):
+            return TitleCreateSerializer
+        return TitleReadSerializer
