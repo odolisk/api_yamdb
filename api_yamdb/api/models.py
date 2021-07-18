@@ -19,7 +19,7 @@ class UserManager(BaseUserManager):
         Creates and saves a User with the given email and password.
         """
         if not email:
-            raise ValueError('The given email must be set')
+            raise ValueError('У пользователя должен быть введён email')
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
@@ -27,55 +27,76 @@ class UserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, password, **extra_fields):
-        extra_fields.setdefault('is_superuser', True)
-        extra_fields.setdefault('is_staff', True)
-
-        if extra_fields.get('is_superuser') is not True:
-            raise ValueError('Superuser must have is_superuser=True.')
-
-        if extra_fields.get('is_staff') is not True:
-            raise ValueError('Superuser must have is_staff=True.')
-
-        return self.create_user(email, password, **extra_fields)
+        """
+        Creates and saves a superuser with the given email, and password.
+        """
+        user = self.create_user(
+            email,
+            password=password
+        )
+        user.is_admin = True
+        user.save(using=self._db)
+        return user
 
 
 class User(AbstractBaseUser, PermissionsMixin):
 
     username = models.CharField(
-        'username',
+        'Имя пользователя',
         max_length=150,
         unique=True,
-        help_text='Required. 150 characters or fewer.',
+        help_text='Обязательное поле.Не более 150 символов.',
         error_messages={
-            'unique': 'A user with that username already exists.',
+            'unique': 'Пользователь с таким username уже существует.',
         },
     )
-    first_name = models.CharField('first name', max_length=150, blank=True)
-    last_name = models.CharField('last name', max_length=150, blank=True)
+    first_name = models.CharField(
+        'Имя',
+        max_length=150,
+        blank=True,
+        null=True)
+
+    last_name = models.CharField(
+        'Фамилия',
+        max_length=150,
+        blank=True,
+        null=True)
+
     email = models.EmailField(
-        'email address',
+        'email',
         unique=True,
         help_text='Email address. Must be unique',
         error_messages={
-            'unique': 'A user with that email already exists.',
+            'unique': 'Пользователь с таким EMail уже существует.',
         },)
+
     bio = models.TextField(
+        'О себе',
         max_length=500,
         blank=True,
-        help_text='About me')
+        null=True,
+        help_text='О себе')
+
     role = models.CharField(
+        'Роль',
         max_length=50,
         choices=USER_ROLES,
         default=USER_ROLES[0],
         help_text='User role')
+
     is_active = models.BooleanField(
-        'active',
+        'Активен',
         default=True,
-        help_text='Can use app or none')
-    is_staff = models.BooleanField(
-        'staff',
+        help_text='Активен или нет')
+
+    is_admin = models.BooleanField(
+        'Администратор',
+        default=False)
+
+    is_superuser = models.BooleanField(
+        'Суперпользователь',
         default=False,
-        help_text='Allow to login in django admin')
+        help_text='User is superuser')
 
     objects = UserManager()
 
@@ -85,6 +106,24 @@ class User(AbstractBaseUser, PermissionsMixin):
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
+
+    def __str__(self):
+        return self.email
+
+    def has_perm(self, perm, obj=None):
+        """Does the user have a specific permission?"""
+        return True
+
+    def has_module_perms(self, app_label):
+        """Does the user have permissions to view the app?"""
+        return True
+
+    @property
+    def is_staff(self):
+        "Is the user a member of staff?"
+        return self.is_admin
+
+    is_staff.fget.short_description = 'Сотрудник'
 
     def get_full_name(self):
         full_name = f'{self.first_name} {self.last_name}'
@@ -98,6 +137,10 @@ class Category(models.Model):
     name = models.CharField(max_length=64)
     slug = models.SlugField(unique=True)
 
+    class Meta:
+        verbose_name = 'Категория'
+        verbose_name_plural = 'Категории'
+
     def __str__(self):
         return f'{self.name}'
 
@@ -105,6 +148,10 @@ class Category(models.Model):
 class Genre(models.Model):
     name = models.CharField(max_length=64,)
     slug = models.SlugField(unique=True)
+
+    class Meta:
+        verbose_name = 'Жанр'
+        verbose_name_plural = 'Жанры'
 
     def __str__(self):
         return f'{self.name}'
@@ -124,6 +171,13 @@ class Title(models.Model):
     year = models.PositiveSmallIntegerField(null=True, blank=True)
     rating = models.PositiveSmallIntegerField(blank=True, null=True)
 
+    class Meta:
+        verbose_name = 'Произведение'
+        verbose_name_plural = 'Произведения'
+
+    def __str__(self):
+        return f'{self.name}'
+
 
 class TitleGenre(models.Model):
     genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
@@ -132,13 +186,17 @@ class TitleGenre(models.Model):
     def __str__(self):
         return f'{self.genre} {self.title}'
 
+    class Meta:
+        verbose_name = 'Жанр произведения'
+        verbose_name_plural = 'Жанры произведений'
+
 
 class Review(models.Model):
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
         related_name='reviews',
-        verbose_name='Заголовок отзыва'
+        verbose_name='Произведение'
     )
     text = models.TextField(verbose_name='Текст отзыва')
     author = models.ForeignKey(
@@ -159,8 +217,12 @@ class Review(models.Model):
         verbose_name='Дата публикации',
     )
 
+    class Meta:
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
 
-class Comments(models.Model):
+
+class Comment(models.Model):
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
@@ -178,3 +240,7 @@ class Comments(models.Model):
         auto_now_add=True,
         verbose_name='Дата публикации',
     )
+
+    class Meta:
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии'
