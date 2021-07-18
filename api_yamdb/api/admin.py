@@ -41,13 +41,12 @@ class UserCreationForm(forms.ModelForm):
 
 class UserChangeForm(forms.ModelForm):
     """A form for updating users. Includes all the fields on
-    the user, but replaces the password field with admin's
-    password hash display field.
+    the user.
     """
 
     class Meta:
         model = User
-        fields = ('email', 'password', 'is_active', 'is_admin')
+        fields = ('email', 'password', 'is_active', 'is_staff')
 
     def save(self, commit=True):
         """Save the provided password in hashed format."""
@@ -65,10 +64,10 @@ class UserAdmin(BaseUserAdmin):
 
     list_display = ('pk', 'username', 'email',
                     'role', 'is_active', 'is_staff')
-    list_filter = ('is_admin',)
+    list_filter = ('is_staff',)
     fieldsets = (
         (None, {'fields': ('email', 'username', 'password')}),
-        ('Права', {'fields': ('role', 'is_admin',)}),
+        ('Права', {'fields': ('role', 'is_staff',)}),
     )
 
     add_fieldsets = (

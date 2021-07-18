@@ -24,6 +24,7 @@ class UserManager(BaseUserManager):
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
+        print(user.username)
         return user
 
     def create_superuser(self, email, password, **extra_fields):
@@ -34,7 +35,8 @@ class UserManager(BaseUserManager):
             email,
             password=password
         )
-        user.is_admin = True
+        user.is_staff = True
+        user.is_superuser = True
         user.save(using=self._db)
         return user
 
@@ -89,8 +91,8 @@ class User(AbstractBaseUser, PermissionsMixin):
         default=True,
         help_text='Активен или нет')
 
-    is_admin = models.BooleanField(
-        'Администратор',
+    is_staff = models.BooleanField(
+        'Сотрудник',
         default=False)
 
     is_superuser = models.BooleanField(
@@ -117,13 +119,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     def has_module_perms(self, app_label):
         """Does the user have permissions to view the app?"""
         return True
-
-    @property
-    def is_staff(self):
-        "Is the user a member of staff?"
-        return self.is_admin
-
-    is_staff.fget.short_description = 'Сотрудник'
 
     def get_full_name(self):
         full_name = f'{self.first_name} {self.last_name}'
