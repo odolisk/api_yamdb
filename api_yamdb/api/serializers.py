@@ -13,6 +13,7 @@ class CategorySerializer(serializers.ModelSerializer):
             'url': {'lookup_field': 'slug'}
         }
 
+
 class GenreSerializer(serializers.ModelSerializer):
 
     class Meta:
