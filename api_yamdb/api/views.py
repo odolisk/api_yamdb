@@ -39,7 +39,7 @@ class CreateUser(APIView):
             email=email,
             username=email,
             password=password,
-            is_active=False,
+            is_active=True,
             role='user'
         )
         send_mail('Request code for YamDB',
