@@ -4,7 +4,7 @@ from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import SlidingToken
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
@@ -58,7 +58,7 @@ class CreateUser(APIView):
 
 @api_view(('POST',))
 @csrf_exempt
-@permission_classes([permissions.AllowAny])
+@permission_classes([permissions.AllowAny, ])
 def obtain_token(request):
     """
     Takes email and confirmation_code from request and
@@ -80,10 +80,11 @@ def obtain_token(request):
     is_user_pass = user.check_password(password)
 
     if is_user_email and is_user_pass:
-        token = SlidingToken.for_user(user)
+        token = RefreshToken.for_user(user)
         user.is_active = True
         user.save()
-        return Response({'token': str(token)}, status=status.HTTP_202_ACCEPTED)
+        return Response({'token': str(token.access_token)},
+                        status=status.HTTP_202_ACCEPTED)
 
     res = {'confirmation_code': 'confirmation_code not valid'
                                 f'for email: {email}'}
@@ -97,7 +98,7 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     filterset_fields = ('username',)
-    permission_classes = (IsAdmin,)
+    permission_classes = (permissions.IsAuthenticated,)
 
     @action(methods=('get', 'patch'), detail=False,
             permission_classes=(permissions.IsAuthenticated,))
@@ -117,25 +118,28 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(methods=('get', 'patch', 'delete'), detail=False,
-            url_path=r'(?P<username>\w+)', permission_classes=(IsAdmin,))
-    def get_update_delete_by_username(self, request, username):
-        """
-        Get, change user info or delete user by username.
-        """
-        user = get_object_or_404(User, username=username)
-        if request.method == 'GET':
-            serializer = UserSerializer(user)
-        elif request.method == 'PATCH':
-            serializer = UserSerializer(user, data=request.data, partial=True)
-            if not serializer.is_valid():
-                return Response(
-                    serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            serializer.save()
-        else:
-            user.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    # @action(methods=('get', 'patch', 'delete'), detail=False,
+    #         url_path=r'(?P<username>\w+)',
+    #         permission_classes=(permissions.IsAuthenticated,))
+    # def get_update_delete_by_username(self, request, username):
+    #     """
+    #     Get, change user info or delete user by username.
+    #     """
+    #     print('vasyyyyyyyya')
+    #     user = get_object_or_404(User, username=username)
+    #     if request.method == 'GET':
+            
+    #         serializer = UserSerializer(user)
+    #     elif request.method == 'PATCH':
+    #         serializer = UserSerializer(user, data=request.data, partial=True)
+    #         if not serializer.is_valid():
+    #             return Response(
+    #                 serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    #         serializer.save()
+    #     else:
+    #         user.delete()
+    #         return Response(status=status.HTTP_204_NO_CONTENT)
+    #     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class ListCreateDestroyAPIView(

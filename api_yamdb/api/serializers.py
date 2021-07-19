@@ -8,18 +8,15 @@ User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):
-    # password = serializers.CharField(
-    #     write_only=True,
-    #     required=True,
-    #     help_text='Оставьте пустым, если не нужно изменять',
-    #     style={'input_type': 'password', 'placeholder': 'Password'}
-    # )
 
     class Meta:
         fields = ('first_name', 'last_name', 'username',
                   'bio', 'email', 'role')
         model = User
-        read_only_fields = ('role',)
+
+    def clean_password(self):
+        if not self.cleaned_data.get('password'):
+            self.cleaned_data['password'] = '31415'
 
 
 class CategorySerializer(serializers.ModelSerializer):

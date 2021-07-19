@@ -3,10 +3,15 @@ from django.contrib.auth.models import (
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
+USER = 'user'
+MODERATOR = 'moderator'
+ADMIN = 'admin'
+
+
 USER_ROLES = (
-    ('user', 'User'),
-    ('moderator', 'Moderator'),
-    ('admin', 'Admin')
+    (USER, 'User'),
+    (MODERATOR, 'Moderator'),
+    (ADMIN, 'Admin')
 )
 
 
@@ -14,25 +19,26 @@ class UserManager(BaseUserManager):
 
     use_in_migrations = True
 
-    def create_user(self, email, password, **extra_fields):
+    def create_user(self, username, email, password, **extra_fields):
         """
         Creates and saves a User with the given email and password.
         """
         if not email:
             raise ValueError('У пользователя должен быть введён email')
         email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
+        user = self.model(email=email, username=username,
+                          role=USER, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
-        print(user.username)
         return user
 
-    def create_superuser(self, email, password, **extra_fields):
+    def create_superuser(self, username, email, password, **extra_fields):
         """
         Creates and saves a superuser with the given email, and password.
         """
         user = self.create_user(
-            email,
+            email=email,
+            username=username,
             password=password
         )
         user.is_staff = True
@@ -52,6 +58,7 @@ class User(AbstractBaseUser, PermissionsMixin):
             'unique': 'Пользователь с таким username уже существует.',
         },
     )
+
     first_name = models.CharField(
         'Имя',
         max_length=150,
@@ -67,9 +74,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(
         'email',
         unique=True,
-        help_text='Email address. Must be unique',
+        help_text='Email адрес. Должен быть уникальным.',
         error_messages={
-            'unique': 'Пользователь с таким EMail уже существует.',
+            'unique': 'Пользователь с таким Email уже существует.',
         },)
 
     bio = models.TextField(
@@ -83,22 +90,22 @@ class User(AbstractBaseUser, PermissionsMixin):
         'Роль',
         max_length=50,
         choices=USER_ROLES,
-        default=USER_ROLES[0],
-        help_text='User role')
+        default=USER,
+        help_text='Роль')
 
     is_active = models.BooleanField(
         'Активен',
-        default=True,
+        default=1,
         help_text='Активен или нет')
 
     is_staff = models.BooleanField(
         'Сотрудник',
-        default=False)
+        default=0)
 
     is_superuser = models.BooleanField(
         'Суперпользователь',
-        default=False,
-        help_text='User is superuser')
+        default=0,
+        help_text='Суперпользователь')
 
     objects = UserManager()
 
@@ -108,9 +115,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
-
-    def __str__(self):
-        return self.email
+        ordering = ('-id',)
 
     def has_perm(self, perm, obj=None):
         """Does the user have a specific permission?"""
@@ -119,13 +124,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     def has_module_perms(self, app_label):
         """Does the user have permissions to view the app?"""
         return True
-
-    def get_full_name(self):
-        full_name = f'{self.first_name} {self.last_name}'
-        return full_name.strip()
-
-    def get_short_name(self):
-        return self.first_name
 
 
 class Category(models.Model):
