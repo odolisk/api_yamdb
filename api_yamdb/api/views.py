@@ -8,7 +8,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
-from django.shortcuts import get_object_or_404
 from django.utils.crypto import get_random_string
 from django.views.decorators.csrf import csrf_exempt
 
@@ -16,7 +15,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from .filters import TitleFilter
 from .models import Category, Title, Genre
-from .permissions import IsAdmin, IsAuthorOrReadOnly, IsModerator
+from .permissions import IsAdmin, IsAdminOrReadOnly, IsAuthorOrReadOnly, IsModerator
 from .serializers import (
     CategorySerializer, GenreSerializer, TitleCreateSerializer,
     TitleReadSerializer, UserSerializer
@@ -98,10 +97,11 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     filterset_fields = ('username',)
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (IsAdmin,)
+    lookup_field = 'username'
 
     @action(methods=('get', 'patch'), detail=False,
-            permission_classes=(permissions.IsAuthenticated,))
+            permission_classes=[permissions.IsAuthenticated])
     def me(self, request):
         """
         Return user info on GET, and correct user profile on PATCH.
@@ -117,29 +117,6 @@ class UserViewSet(viewsets.ModelViewSet):
                 return Response(serializer.data, status=status.HTTP_200_OK)
             return Response(
                 serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    # @action(methods=('get', 'patch', 'delete'), detail=False,
-    #         url_path=r'(?P<username>\w+)',
-    #         permission_classes=(permissions.IsAuthenticated,))
-    # def get_update_delete_by_username(self, request, username):
-    #     """
-    #     Get, change user info or delete user by username.
-    #     """
-    #     print('vasyyyyyyyya')
-    #     user = get_object_or_404(User, username=username)
-    #     if request.method == 'GET':
-            
-    #         serializer = UserSerializer(user)
-    #     elif request.method == 'PATCH':
-    #         serializer = UserSerializer(user, data=request.data, partial=True)
-    #         if not serializer.is_valid():
-    #             return Response(
-    #                 serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    #         serializer.save()
-    #     else:
-    #         user.delete()
-    #         return Response(status=status.HTTP_204_NO_CONTENT)
-    #     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class ListCreateDestroyAPIView(
@@ -157,6 +134,7 @@ class CategoryViewSet(ListCreateDestroyAPIView):
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
+    permission_classes = (IsAdminOrReadOnly,)
 
 
 class GenreViewSet(ListCreateDestroyAPIView):

@@ -27,7 +27,7 @@ class UserManager(BaseUserManager):
             raise ValueError('У пользователя должен быть введён email')
         email = self.normalize_email(email)
         user = self.model(email=email, username=username,
-                          role=USER, **extra_fields)
+                          **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -109,8 +109,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     objects = UserManager()
 
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ('username',)
+    USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = ('email',)
 
     class Meta:
         verbose_name = 'Пользователь'
@@ -133,6 +133,7 @@ class Category(models.Model):
     class Meta:
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
+        ordering = ('-id',)
 
     def __str__(self):
         return f'{self.name}'
@@ -145,6 +146,7 @@ class Genre(models.Model):
     class Meta:
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
+        ordering = ('-id',)
 
     def __str__(self):
         return f'{self.name}'
@@ -167,6 +169,7 @@ class Title(models.Model):
     class Meta:
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
+        ordering = ('-id',)
 
     def __str__(self):
         return f'{self.name}'
@@ -213,6 +216,7 @@ class Review(models.Model):
     class Meta:
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
+        ordering = ('-id',)
 
 
 class Comment(models.Model):
@@ -237,3 +241,4 @@ class Comment(models.Model):
     class Meta:
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
+        ordering = ('-id',)

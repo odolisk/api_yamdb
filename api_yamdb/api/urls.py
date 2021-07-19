@@ -2,6 +2,7 @@ from rest_framework.routers import DefaultRouter
 
 from django.urls import include, path
 
+
 from .views import (CategoryViewSet, CreateUser, GenreViewSet,
                     obtain_token, TitleViewSet, UserViewSet)
 
@@ -14,13 +15,6 @@ v1_router.register('categories',
                    CategoryViewSet, basename='categories')
 v1_router.register('genres',
                    GenreViewSet, basename='genres')
-
-#     r'posts/(?P<post_id>\d+)/comments',
-#     CommentViewSet,
-#     basename='comments'
-# )
-# v1_router.register('follow', FollowViewSet, basename='follow')
-# v1_router.register('group', GroupViewSet, basename='group')
 
 urlpatterns = (
     path(f'{API_VERSION}/auth/email/',

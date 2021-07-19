@@ -16,15 +16,26 @@ class IsModerator(permissions.BasePermission):
         )
 
 
-class IsAdmin(permissions.BasePermission):
+class IsAdmin(permissions.IsAuthenticated):
 
     """
     Permission allow all.
     """
     def has_permission(self, request, view):
+        auth_permission = super().has_permission(request, view)
         return (
-            request.user.is_authenticated
+            auth_permission
             and ((request.user.role == ADMIN) or request.user.is_superuser))
+
+
+class IsAdminOrReadOnly(IsAdmin):
+
+    def has_permission(self, request, view):
+        admin_permission = super().has_permission(request, view)
+        return (
+            request.method == 'GET'
+            or admin_permission
+        )
 
 
 class IsAuthorOrReadOnly(permissions.BasePermission):

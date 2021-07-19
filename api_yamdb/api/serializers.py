@@ -14,10 +14,6 @@ class UserSerializer(serializers.ModelSerializer):
                   'bio', 'email', 'role')
         model = User
 
-    def clean_password(self):
-        if not self.cleaned_data.get('password'):
-            self.cleaned_data['password'] = '31415'
-
 
 class CategorySerializer(serializers.ModelSerializer):
 
