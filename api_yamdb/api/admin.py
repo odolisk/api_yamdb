@@ -95,6 +95,7 @@ class GenreAdmin(admin.ModelAdmin):
 
 class TitleAdmin(admin.ModelAdmin):
     list_display = ('pk', 'name', 'category', 'description', 'year', 'rating')
+    readonly_fields = ('rating',)
     search_fields = ('name',)
 
 

@@ -1,8 +1,10 @@
 from rest_framework import serializers
 
 from django.contrib.auth import get_user_model
+from django.db.models import Avg
 
-from .models import Title, Category, Genre
+
+from .models import Comment, Category, Genre, Review, Title
 
 User = get_user_model()
 
@@ -40,10 +42,18 @@ class GenreSerializer(serializers.ModelSerializer):
 class TitleReadSerializer(serializers.ModelSerializer):
     genre = GenreSerializer(many=True, read_only=True)
     category = CategorySerializer(read_only=True)
+    rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Title
-        fields = ('id', 'name', 'year', 'description', 'genre', 'category')
+        fields = ('id', 'name', 'year', 'rating',
+                  'description', 'genre', 'category')
+
+    def get_rating(self, title):
+        average = title.reviews.aggregate(rating=Avg('score'))['rating']
+        if average is None:
+            return None
+        return average
 
 
 class TitleCreateSerializer(serializers.ModelSerializer):
@@ -53,7 +63,43 @@ class TitleCreateSerializer(serializers.ModelSerializer):
     category = serializers.SlugRelatedField(
         slug_field='slug', queryset=Category.objects.all()
     )
+    rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Title
-        fields = ('id', 'name', 'year', 'description', 'genre', 'category')
+        fields = ('id', 'name', 'year', 'rating',
+                  'description', 'genre', 'category')
+        read_only_fields = ('rating',)
+
+    def get_rating(self, title):
+        average = title.reviews.aggregate(rating=Avg('score'))['rating']
+        return average or None
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True)
+
+    review = serializers.SlugRelatedField(
+        slug_field='id',
+        read_only=True)
+
+    class Meta:
+        fields = ('id', 'author', 'review', 'text', 'pub_date')
+        model = Comment
+        read_only_fields = ('review',)
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True)
+
+    title = serializers.SlugRelatedField(
+        slug_field='id',
+        read_only=True)
+
+    class Meta:
+        fields = ('id', 'title', 'text', 'author', 'score', 'pub_date')
+        model = Review

@@ -8,17 +8,19 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
+from django.shortcuts import get_object_or_404
 from django.utils.crypto import get_random_string
 from django.views.decorators.csrf import csrf_exempt
 
 from django_filters.rest_framework import DjangoFilterBackend
 
 from .filters import TitleFilter
-from .models import Category, Title, Genre
-from .permissions import IsAdmin, IsAdminOrReadOnly, IsAuthorOrReadOnly, IsModerator
+from .models import Category, Genre, Title, Review
+from .permissions import (IsAdmin, IsAdminOrReadOnly,
+                          CommentAndReviewPermissions)
 from .serializers import (
-    CategorySerializer, GenreSerializer, TitleCreateSerializer,
-    TitleReadSerializer, UserSerializer
+    CategorySerializer, CommentSerializer, GenreSerializer, ReviewSerializer,
+    TitleCreateSerializer, TitleReadSerializer, UserSerializer
 )
 
 ALLOWED_CHARS = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -28,6 +30,7 @@ User = get_user_model()
 
 
 class CreateUser(APIView):
+
     """
     Create user with email from request an random password.
     Send mail with password as confirmation_code.
@@ -37,6 +40,11 @@ class CreateUser(APIView):
 
     def post(self, request, format=None):
         email = request.data.get('email')
+        user_exist = User.objects.filter(email=email)
+        if user_exist:
+            return Response(
+                {'email': 'Данный email уже зарегистрирован'},
+                status=status.HTTP_400_BAD_REQUEST)
         password = get_random_string(
             length=10,
             allowed_chars=ALLOWED_CHARS)
@@ -120,6 +128,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class ListCreateDestroyAPIView(
+
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
     mixins.DestroyModelMixin,
@@ -129,6 +138,7 @@ class ListCreateDestroyAPIView(
 
 
 class CategoryViewSet(ListCreateDestroyAPIView):
+
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     filter_backends = (filters.SearchFilter,)
@@ -138,6 +148,7 @@ class CategoryViewSet(ListCreateDestroyAPIView):
 
 
 class GenreViewSet(ListCreateDestroyAPIView):
+
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     filter_backends = (filters.SearchFilter,)
@@ -157,3 +168,53 @@ class TitleViewSet(viewsets.ModelViewSet):
         if self.action in ('create', 'update', 'partial_update'):
             return TitleCreateSerializer
         return TitleReadSerializer
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+
+    serializer_class = CommentSerializer
+    permission_classes = (CommentAndReviewPermissions,)
+
+    def get_queryset(self):
+        review_id = self.kwargs.get('review_id')
+        review = get_object_or_404(Review, id=review_id)
+        return review.comments.all()
+
+    def perform_create(self, serializer):
+        review_id = self.kwargs.get('review_id')
+        review = get_object_or_404(Review, id=review_id)
+        serializer.save(
+            author=self.request.user,
+            review=review)
+
+
+class ReviewViewSet(viewsets.ModelViewSet):
+
+    serializer_class = ReviewSerializer
+    permission_classes = (CommentAndReviewPermissions,)
+
+    def get_queryset(self):
+        title_id = self.kwargs.get('title_id')
+        title = get_object_or_404(Title, id=title_id)
+        return title.reviews.all()
+
+    def create(self, request, *args, **kwargs):
+        title_id = self.kwargs.get('title_id')
+        title = get_object_or_404(Title, id=title_id)
+        review = Review.objects.filter(author=self.request.user,
+                                       title=title)
+        if review.exists():
+            return Response(
+                {'Отзыв': 'Вы уже оставляли отзыв'},
+                status=status.HTTP_400_BAD_REQUEST)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer, title)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data,
+                        status=status.HTTP_201_CREATED, headers=headers)
+
+    def perform_create(self, serializer, title):
+        serializer.save(
+            author=self.request.user,
+            title=title)

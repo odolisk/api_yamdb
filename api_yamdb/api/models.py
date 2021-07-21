@@ -3,6 +3,7 @@ from django.contrib.auth.models import (
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
+
 USER = 'user'
 MODERATOR = 'moderator'
 ADMIN = 'admin'
@@ -127,8 +128,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 
 class Category(models.Model):
-    name = models.CharField(max_length=64)
-    slug = models.SlugField(unique=True)
+    name = models.CharField('Название', max_length=64)
+    slug = models.SlugField('Slug', unique=True)
 
     class Meta:
         verbose_name = 'Категория'
@@ -140,8 +141,8 @@ class Category(models.Model):
 
 
 class Genre(models.Model):
-    name = models.CharField(max_length=64,)
-    slug = models.SlugField(unique=True)
+    name = models.CharField('Название', max_length=64,)
+    slug = models.SlugField('Slug', unique=True)
 
     class Meta:
         verbose_name = 'Жанр'
@@ -153,18 +154,30 @@ class Genre(models.Model):
 
 
 class Title(models.Model):
-    name = models.CharField(max_length=64)
+    name = models.CharField('Название', max_length=64)
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
+        verbose_name='Категория',
         related_name='title'
     )
-    description = models.TextField(null=True, blank=True)
-    genre = models.ManyToManyField(Genre, through='TitleGenre', blank=True)
-    year = models.PositiveSmallIntegerField(null=True, blank=True)
-    rating = models.PositiveSmallIntegerField(blank=True, null=True)
+    description = models.TextField('Описание', null=True, blank=True)
+    genre = models.ManyToManyField(
+        Genre,
+        through='TitleGenre',
+        blank=True,
+        verbose_name='Жанр')
+    year = models.PositiveSmallIntegerField(
+        'Год создания', null=True, blank=True)
+    rating = models.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        verbose_name='Рейтинг',
+        blank=True,
+        null=True
+    )
 
     class Meta:
         verbose_name = 'Произведение'
@@ -176,8 +189,14 @@ class Title(models.Model):
 
 
 class TitleGenre(models.Model):
-    genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
-    title = models.ForeignKey(Title, on_delete=models.CASCADE)
+    genre = models.ForeignKey(
+        Genre,
+        on_delete=models.CASCADE,
+        verbose_name='Жанр')
+    title = models.ForeignKey(
+        Title,
+        on_delete=models.CASCADE,
+        verbose_name='Произведение')
 
     def __str__(self):
         return f'{self.genre} {self.title}'
@@ -213,6 +232,9 @@ class Review(models.Model):
         verbose_name='Дата публикации',
     )
 
+    def __str__(self):
+        return self.text[:25]
+
     class Meta:
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
@@ -237,6 +259,9 @@ class Comment(models.Model):
         auto_now_add=True,
         verbose_name='Дата публикации',
     )
+
+    def __str__(self):
+        return self.text[:25]
 
     class Meta:
         verbose_name = 'Комментарий'

@@ -4,18 +4,6 @@ MODERATOR = 'moderator'
 ADMIN = 'admin'
 
 
-class IsModerator(permissions.BasePermission):
-
-    """
-    Permission to modify and delete instances except Titles.
-    """
-    def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated
-            and request.user.role == MODERATOR
-        )
-
-
 class IsAdmin(permissions.IsAuthenticated):
 
     """
@@ -38,12 +26,24 @@ class IsAdminOrReadOnly(IsAdmin):
         )
 
 
-class IsAuthorOrReadOnly(permissions.BasePermission):
+class CommentAndReviewPermissions(permissions.IsAuthenticated):
+    """
+    Permission for comments and reviews. Allow GET to all.
+    Allow POST to auth.
+    Allow PATCH and DELETE to moderator, admin or author.
+    """
+    def has_permission(self, request, view):
+        auth = super().has_permission(request, view)
+        if (request.method == 'GET'
+            or (auth and request.method == 'POST')
+                or (auth and request.method in ('PATCH', 'DELETE'))):
+            return True
 
-    """
-    Permission to only allow authors of an object to edit it.
-    """
     def has_object_permission(self, request, view, obj):
-        return (
-            request.method in permissions.SAFE_METHODS
-            or request.user == obj.author)
+        if request.method == 'GET':
+            return True
+        if request.method in ('PATCH', 'DELETE'):
+            return (request.user == obj.author
+                    or request.user.role == ADMIN
+                    or request.user.role == MODERATOR
+                    or request.user.is_superuser)
