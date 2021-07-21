@@ -1,30 +1,36 @@
-# api_yamdb
-api_yamdb
+# API YamDB
 
-For Test
+## Проект Django REST API.
 
-### Django REST API project.
+### Требования
 
->##### Installing
+- Указаны в **requirements.txt**
+
+### Запуск проекта в dev-mode
+
+- Установите и активируйте виртуальное окружение venv. [Подробнее](https://pythoner.name/documentation/tutorial/venv)
+- Установите зависимости из **requirements.txt**
+
+```python
+pip install -r requirements.txt
 ```
- python -m venv venv
- source venv/Scripts/activate
- pip install -r requirements.txt
- python manage.py makemigrations
- python manage.py migrate
+
+- Запустите миграции (из папки с manage.py)
+
+```python
+python manage.py migrate
+```
+
+- Создайте суперпользователя:
+
+```python
  python manage.py createsuperuser
+```
+
+- Запустите сервер
+
+```python
  python manage.py runserver 
 ```
-```
-POST http://127.0.0.1:8000/api/v1/token/
-```
-```
-POST http://127.0.0.1:8000/api/v1/posts/
-```
 
-
-Project documentation: [http://127.0.0.1:8000/redoc/](http://localhost:8000/redoc/)
-
-----!!!!!!!!!!!!!!!----
-V.2
-----!!!!!!!!!!!!!!!----
+Документация доступна по адресу http://Localhost:8000/redoc/
