@@ -127,7 +127,6 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class ListCreateDestroyAPIView(
-
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
     mixins.DestroyModelMixin,
