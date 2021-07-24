@@ -1,54 +1,19 @@
-from django.contrib.auth.models import (
-    AbstractBaseUser, BaseUserManager, PermissionsMixin)
+from django.contrib.auth.models import AbstractUser, PermissionsMixin
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-
 
 USER = 'user'
 MODERATOR = 'moderator'
 ADMIN = 'admin'
 
 
-USER_ROLES = (
-    (USER, 'User'),
-    (MODERATOR, 'Moderator'),
-    (ADMIN, 'Admin')
-)
+class User(AbstractUser, PermissionsMixin):
 
-
-class UserManager(BaseUserManager):
-
-    use_in_migrations = True
-
-    def create_user(self, username, email, password, **extra_fields):
-        """
-        Creates and saves a User with the given email and password.
-        """
-        if not email:
-            raise ValueError('У пользователя должен быть введён email')
-        email = self.normalize_email(email)
-        user = self.model(email=email, username=username,
-                          **extra_fields)
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
-
-    def create_superuser(self, username, email, password, **extra_fields):
-        """
-        Creates and saves a superuser with the given email, and password.
-        """
-        user = self.create_user(
-            email=email,
-            username=username,
-            password=password
-        )
-        user.is_staff = True
-        user.is_superuser = True
-        user.save(using=self._db)
-        return user
-
-
-class User(AbstractBaseUser, PermissionsMixin):
+    USER_ROLES = (
+        (USER, 'User'),
+        (MODERATOR, 'Moderator'),
+        (ADMIN, 'Admin')
+    )
 
     username = models.CharField(
         'Имя пользователя',
@@ -101,14 +66,13 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     is_staff = models.BooleanField(
         'Сотрудник',
-        default=0)
+        default=0,
+        help_text='Является ли сотрудником')
 
     is_superuser = models.BooleanField(
         'Суперпользователь',
         default=0,
         help_text='Суперпользователь')
-
-    objects = UserManager()
 
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ('email',)
@@ -126,6 +90,14 @@ class User(AbstractBaseUser, PermissionsMixin):
         """Does the user have permissions to view the app?"""
         return True
 
+    @property
+    def is_moderator(self):
+        return self.role == MODERATOR
+
+    @property
+    def is_administrator(self):
+        return self.role == ADMIN
+
 
 class Category(models.Model):
     name = models.CharField('Название', max_length=64)
@@ -137,7 +109,7 @@ class Category(models.Model):
         ordering = ('-id',)
 
     def __str__(self):
-        return f'{self.name}'
+        return self.name
 
 
 class Genre(models.Model):
@@ -150,7 +122,7 @@ class Genre(models.Model):
         ordering = ('-id',)
 
     def __str__(self):
-        return f'{self.name}'
+        return self.name
 
 
 class Title(models.Model):
@@ -163,10 +135,9 @@ class Title(models.Model):
         verbose_name='Категория',
         related_name='title'
     )
-    description = models.TextField('Описание', null=True, blank=True)
+    description = models.TextField('Описание', blank=True)
     genre = models.ManyToManyField(
         Genre,
-        through='TitleGenre',
         blank=True,
         verbose_name='Жанр')
     year = models.PositiveSmallIntegerField(
@@ -183,27 +154,32 @@ class Title(models.Model):
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
         ordering = ('-id',)
+        indexes = [
+            models.Index(fields=('category',)),
+            models.Index(fields=('name',)),
+            models.Index(fields=('year',)),
+        ]
 
     def __str__(self):
-        return f'{self.name}'
+        return self.name
 
 
-class TitleGenre(models.Model):
-    genre = models.ForeignKey(
-        Genre,
-        on_delete=models.CASCADE,
-        verbose_name='Жанр')
-    title = models.ForeignKey(
-        Title,
-        on_delete=models.CASCADE,
-        verbose_name='Произведение')
+# class TitleGenre(models.Model):
+#     genre = models.ForeignKey(
+#         Genre,
+#         on_delete=models.CASCADE,
+#         verbose_name='Жанр')
+#     title = models.ForeignKey(
+#         Title,
+#         on_delete=models.CASCADE,
+#         verbose_name='Произведение')
 
-    def __str__(self):
-        return f'{self.genre} {self.title}'
+#     def __str__(self):
+#         return f'{self.genre} {self.title}'
 
-    class Meta:
-        verbose_name = 'Жанр произведения'
-        verbose_name_plural = 'Жанры произведений'
+#     class Meta:
+#         verbose_name = 'Жанр произведения'
+#         verbose_name_plural = 'Жанры произведений'
 
 
 class Review(models.Model):
@@ -232,13 +208,13 @@ class Review(models.Model):
         verbose_name='Дата публикации',
     )
 
-    def __str__(self):
-        return self.text[:25]
-
     class Meta:
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
         ordering = ('-id',)
+
+    def __str__(self):
+        return self.text[:25]
 
 
 class Comment(models.Model):
@@ -260,10 +236,10 @@ class Comment(models.Model):
         verbose_name='Дата публикации',
     )
 
-    def __str__(self):
-        return self.text[:25]
-
     class Meta:
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
         ordering = ('-id',)
+
+    def __str__(self):
+        return self.text[:25]
