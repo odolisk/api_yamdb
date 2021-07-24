@@ -5,7 +5,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import Group
 
 
-from .models import Category, Comment, Genre, Title, TitleGenre, Review
+from .models import Category, Comment, Genre, Title, Review
 
 User = get_user_model()
 
@@ -99,11 +99,6 @@ class TitleAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 
-class TitleGenreAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'genre', 'title')
-    search_fields = ('title',)
-
-
 class ReviewAdmin(admin.ModelAdmin):
     list_display = ('pk', 'title', 'text', 'author', 'score', 'pub_date')
     search_fields = ('text',)
@@ -119,6 +114,5 @@ admin.site.unregister(Group)
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Genre, GenreAdmin)
 admin.site.register(Title, TitleAdmin)
-admin.site.register(TitleGenre, TitleGenreAdmin)
 admin.site.register(Review, ReviewAdmin)
 admin.site.register(Comment, CommentAdmin)

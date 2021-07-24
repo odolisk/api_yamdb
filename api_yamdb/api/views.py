@@ -1,5 +1,6 @@
 import json
 
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
@@ -12,15 +13,13 @@ from django.shortcuts import get_object_or_404
 from django.utils.crypto import get_random_string
 from django.views.decorators.csrf import csrf_exempt
 
-from django_filters.rest_framework import DjangoFilterBackend
-
 from .filters import TitleFilter
 from .models import Category, Genre, Title, Review
 from .permissions import (IsAdmin, IsAdminOrReadOnly,
                           CommentAndReviewPermissions)
 from .serializers import (
     CategorySerializer, CommentSerializer, GenreSerializer, ReviewSerializer,
-    TitleCreateSerializer, TitleReadSerializer, UserSerializer
+    TitleWriteSerializer, TitleReadSerializer, UserSerializer
 )
 
 ALLOWED_CHARS = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -138,27 +137,24 @@ class ListCreateDestroyAPIView(
 
 
 class CategoryViewSet(ListCreateDestroyAPIView):
-
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
+    search_fields = ('=name',)
     lookup_field = 'slug'
     permission_classes = (IsAdminOrReadOnly,)
 
 
 class GenreViewSet(ListCreateDestroyAPIView):
-
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
+    search_fields = ('=name',)
     lookup_field = 'slug'
     permission_classes = (IsAdminOrReadOnly,)
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-
     queryset = Title.objects.all()
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
@@ -166,7 +162,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if self.action in ('create', 'update', 'partial_update'):
-            return TitleCreateSerializer
+            return TitleWriteSerializer
         return TitleReadSerializer
 
 

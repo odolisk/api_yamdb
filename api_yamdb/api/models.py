@@ -137,7 +137,7 @@ class Category(models.Model):
         ordering = ('-id',)
 
     def __str__(self):
-        return f'{self.name}'
+        return self.name
 
 
 class Genre(models.Model):
@@ -150,7 +150,7 @@ class Genre(models.Model):
         ordering = ('-id',)
 
     def __str__(self):
-        return f'{self.name}'
+        return self.name
 
 
 class Title(models.Model):
@@ -163,10 +163,9 @@ class Title(models.Model):
         verbose_name='Категория',
         related_name='title'
     )
-    description = models.TextField('Описание', null=True, blank=True)
+    description = models.TextField('Описание', null=True)
     genre = models.ManyToManyField(
         Genre,
-        through='TitleGenre',
         blank=True,
         verbose_name='Жанр')
     year = models.PositiveSmallIntegerField(
@@ -185,25 +184,7 @@ class Title(models.Model):
         ordering = ('-id',)
 
     def __str__(self):
-        return f'{self.name}'
-
-
-class TitleGenre(models.Model):
-    genre = models.ForeignKey(
-        Genre,
-        on_delete=models.CASCADE,
-        verbose_name='Жанр')
-    title = models.ForeignKey(
-        Title,
-        on_delete=models.CASCADE,
-        verbose_name='Произведение')
-
-    def __str__(self):
-        return f'{self.genre} {self.title}'
-
-    class Meta:
-        verbose_name = 'Жанр произведения'
-        verbose_name_plural = 'Жанры произведений'
+        return self.name
 
 
 class Review(models.Model):
@@ -232,13 +213,13 @@ class Review(models.Model):
         verbose_name='Дата публикации',
     )
 
-    def __str__(self):
-        return self.text[:25]
-
     class Meta:
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
         ordering = ('-id',)
+
+    def __str__(self):
+        return self.text[:25]
 
 
 class Comment(models.Model):
@@ -260,10 +241,10 @@ class Comment(models.Model):
         verbose_name='Дата публикации',
     )
 
-    def __str__(self):
-        return self.text[:25]
-
     class Meta:
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
         ordering = ('-id',)
+
+    def __str__(self):
+        return self.text[:25]
