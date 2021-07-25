@@ -90,7 +90,7 @@ class UserViewSet(viewsets.ModelViewSet):
         if request.method in permissions.SAFE_METHODS:
             serializer = self.get_serializer(user)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        serializer = UserSerializer(user, data=request.data, partial=True)
+        serializer = self.get_serializer(user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
