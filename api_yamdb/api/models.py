@@ -142,13 +142,6 @@ class Title(models.Model):
         verbose_name='Жанр')
     year = models.PositiveSmallIntegerField(
         'Год создания', null=True, blank=True)
-    # rating = models.DecimalField(
-    #     max_digits=4,
-    #     decimal_places=2,
-    #     verbose_name='Рейтинг',
-    #     blank=True,
-    #     null=True
-    # )
 
     class Meta:
         verbose_name = 'Произведение'

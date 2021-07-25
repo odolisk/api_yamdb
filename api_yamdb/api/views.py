@@ -5,7 +5,6 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db.models import Avg
@@ -18,11 +17,8 @@ from .permissions import (IsAdmin, IsAdminOrReadOnly,
 from .serializers import (
     CategorySerializer, CommentSerializer, GenreSerializer,
     ReviewSerializer, TitleReadSerializer, TitleWriteSerializer,
-    UserAuthSerializer, UserSerializer
+    UserAuthSerializer, UserObtainTokenSerializer, UserSerializer
 )
-from django.conf import settings
-
-User = get_user_model()
 
 
 @api_view(('POST',))
@@ -35,7 +31,8 @@ def create_user_or_get_code(request):
     """
     serializer = UserAuthSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    email = serializer.validated_data['email']
+    email = serializer.validated_data.get('email')
+
     user, created = User.objects.get_or_create(
         email=email
     )
@@ -56,7 +53,7 @@ def obtain_token(request):
     get user sliding token with confirmation_code as password.
     Make user active.
     """
-    serializer = UserAuthSerializer(data=request.data)
+    serializer = UserObtainTokenSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     email = serializer.validated_data['email']
     user = get_object_or_404(User, email=email)
@@ -90,8 +87,8 @@ class UserViewSet(viewsets.ModelViewSet):
         Return user info on GET, and correct user profile on PATCH.
         """
         user = request.user
-        if request.method == 'GET':
-            serializer = UserSerializer(user)
+        if request.method in permissions.SAFE_METHODS:
+            serializer = self.get_serializer(user)
             return Response(serializer.data, status=status.HTTP_200_OK)
         serializer = UserSerializer(user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)

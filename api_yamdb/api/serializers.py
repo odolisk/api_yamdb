@@ -7,10 +7,11 @@ from .models import Category, Comment, Genre, Review, Title, User
 
 class UserAuthSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    confirmation_code = serializers.CharField(max_length=150)
 
-    def create(self, validated_data):
-        return User(**validated_data)
+
+class UserObtainTokenSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    confirmation_code = serializers.CharField(max_length=150)
 
 
 class UserSerializer(serializers.ModelSerializer):
