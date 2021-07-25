@@ -1,14 +1,16 @@
 from rest_framework import serializers
 
+from django.shortcuts import get_object_or_404
+
 from .models import Category, Comment, Genre, Review, Title, User
 
 
-class UserAuthSerializer(serializers.ModelSerializer):
+class UserAuthSerializer(serializers.Serializer):
     email = serializers.EmailField()
+    confirmation_code = serializers.CharField(max_length=150)
 
-    class Meta:
-        fields = ('email',)
-        model = User
+    def create(self, validated_data):
+        return User(**validated_data)
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -24,9 +26,6 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ('name', 'slug')
-        extra_kwargs = {
-            'url': {'lookup_field': 'slug'}
-        }
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -34,16 +33,14 @@ class GenreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Genre
         fields = ('name', 'slug')
-        extra_kwargs = {
-            'url': {'lookup_field': 'slug'}
-        }
 
 
 class TitleReadSerializer(serializers.ModelSerializer):
     genre = GenreSerializer(many=True, read_only=True)
     category = CategorySerializer(read_only=True)
     rating = serializers.DecimalField(max_digits=4, decimal_places=2,
-                                      max_value=10.0, min_value=1.0)
+                                      max_value=10.0, min_value=1.0,
+                                      coerce_to_string=False)
 
     class Meta:
         model = Title
@@ -61,7 +58,7 @@ class TitleWriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Title
-        fields = ('id', 'name', 'year', 'rating',
+        fields = ('id', 'name', 'year',
                   'description', 'genre', 'category')
         read_only_fields = ('rating',)
 
@@ -87,12 +84,10 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
 
     def validate(self, data):
-        author = data.get('author_id')
-        title = data.get('title_id')
-
-        review = title.reviews.filter(author_id=author, title_id=title).first()
-
-        if review:
+        author_id = self.context.get('author_id')
+        title_id = self.context.get('title_id')
+        title = get_object_or_404(Title, id=title_id)
+        review = title.reviews.filter(author_id=author_id)
+        if self.context.get('method') == 'POST' and review:
             raise serializers.ValidationError('Вы уже оставляли отзыв')
-
         return super().validate(data)

@@ -142,13 +142,13 @@ class Title(models.Model):
         verbose_name='Жанр')
     year = models.PositiveSmallIntegerField(
         'Год создания', null=True, blank=True)
-    rating = models.DecimalField(
-        max_digits=4,
-        decimal_places=2,
-        verbose_name='Рейтинг',
-        blank=True,
-        null=True
-    )
+    # rating = models.DecimalField(
+    #     max_digits=4,
+    #     decimal_places=2,
+    #     verbose_name='Рейтинг',
+    #     blank=True,
+    #     null=True
+    # )
 
     class Meta:
         verbose_name = 'Произведение'
@@ -162,24 +162,6 @@ class Title(models.Model):
 
     def __str__(self):
         return self.name
-
-
-# class TitleGenre(models.Model):
-#     genre = models.ForeignKey(
-#         Genre,
-#         on_delete=models.CASCADE,
-#         verbose_name='Жанр')
-#     title = models.ForeignKey(
-#         Title,
-#         on_delete=models.CASCADE,
-#         verbose_name='Произведение')
-
-#     def __str__(self):
-#         return f'{self.genre} {self.title}'
-
-#     class Meta:
-#         verbose_name = 'Жанр произведения'
-#         verbose_name_plural = 'Жанры произведений'
 
 
 class Review(models.Model):

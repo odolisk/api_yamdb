@@ -17,8 +17,8 @@ from .permissions import (IsAdmin, IsAdminOrReadOnly,
                           IsAdminModeratorAuthorOrCanCreateOrReadOnly)
 from .serializers import (
     CategorySerializer, CommentSerializer, GenreSerializer,
-    ReviewSerializer, TitleWriteSerializer, TitleReadSerializer,
-    UserSerializer, UserAuthSerializer
+    ReviewSerializer, TitleReadSerializer, TitleWriteSerializer,
+    UserAuthSerializer, UserSerializer
 )
 from django.conf import settings
 
@@ -36,11 +36,9 @@ def create_user_or_get_code(request):
     serializer = UserAuthSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     email = serializer.validated_data['email']
-    print(f'email: {email} ended')
     user, created = User.objects.get_or_create(
         email=email
     )
-    print('boo')
     confirmation_code = default_token_generator.make_token(user)
     send_mail('Запрос confirmation_code для YamDB',
               f'Ваш confirmation_code: {confirmation_code}',
@@ -58,7 +56,7 @@ def obtain_token(request):
     get user sliding token with confirmation_code as password.
     Make user active.
     """
-    serializer = UserSerializer(data=request.data)
+    serializer = UserAuthSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     email = serializer.validated_data['email']
     user = get_object_or_404(User, email=email)
@@ -93,10 +91,9 @@ class UserViewSet(viewsets.ModelViewSet):
         """
         user = request.user
         if request.method == 'GET':
-            # serializer = UserSerializer(user)
-            serializer = self.get_serializer(user)
+            serializer = UserSerializer(user)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        serializer = self.get_serializer(user)
+        serializer = UserSerializer(user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -115,7 +112,7 @@ class CategoryViewSet(ListCreateDestroyAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
+    search_fields = ('=name',)
     lookup_field = 'slug'
     permission_classes = (IsAdminOrReadOnly,)
 
@@ -124,13 +121,14 @@ class GenreViewSet(ListCreateDestroyAPIView):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
+    search_fields = ('=name',)
     lookup_field = 'slug'
     permission_classes = (IsAdminOrReadOnly,)
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.all()
+    queryset = Title.objects.annotate(
+        rating=Avg('reviews__score')).order_by('-id')
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
     permission_classes = (IsAdminOrReadOnly,)
@@ -140,9 +138,6 @@ class TitleViewSet(viewsets.ModelViewSet):
             return TitleWriteSerializer
         return TitleReadSerializer
 
-    def get_rating(self, title):
-        return title.reviews.aggregate(rating=Avg('score'))['rating']
-
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
@@ -150,12 +145,14 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         review_id = self.kwargs.get('review_id')
-        review = get_object_or_404(Review, id=review_id)
+        title_id = self.kwargs.get('title_id')
+        review = get_object_or_404(Review, id=review_id, title=title_id)
         return review.comments.all()
 
     def perform_create(self, serializer):
         review_id = self.kwargs.get('review_id')
-        review = get_object_or_404(Review, id=review_id)
+        title_id = self.kwargs.get('title_id')
+        review = get_object_or_404(Review, id=review_id, title=title_id)
         serializer.save(
             author=self.request.user,
             review=review)
@@ -172,26 +169,42 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         title_id = self.kwargs.get('title_id')
-        title = get_object_or_404(Title, id=title_id)
-        # review = Review.objects.filter(author=self.request.user,
-        #                                title=title)
-        # if review.exists():
-        #     return Response(
-        #         {'Отзыв': 'Вы уже оставляли отзыв'},
-        #         status=status.HTTP_400_BAD_REQUEST)
+        author_id = request.user.id
         data = request.data
-        data._mutable = True
-        data['title_id'] = title.id
-        data['author_id'] = request.user.id
-        data._mutable = False
-        serializer = self.get_serializer(data=data)
+        serializer = self.get_serializer(
+            data=data,
+            context={'author_id': author_id,
+                     'title_id': title_id,
+                     'method': request.method})
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer, title)
+        self.perform_create(serializer, title_id)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data,
                         status=status.HTTP_201_CREATED, headers=headers)
 
-    def perform_create(self, serializer, title):
+    def perform_create(self, serializer, title_id):
         serializer.save(
             author=self.request.user,
-            title=title)
+            title_id=title_id)
+
+    def update(self, request, *args, **kwargs):
+        title_id = self.kwargs.get('title_id')
+        author_id = request.user.id
+        data = request.data
+        serializer = self.get_serializer(
+            self.get_object(),
+            data=data,
+            context={'author_id': author_id,
+                     'title_id': title_id,
+                     'method': request.method}, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer, title_id)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data,
+                        status=status.HTTP_200_OK, headers=headers)
+
+    def perform_update(self, serializer, title_id):
+        serializer.save(
+            author=self.request.user,
+            title_id=title_id
+        )

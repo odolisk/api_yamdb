@@ -33,14 +33,8 @@ class GenreAdmin(admin.ModelAdmin):
 
 
 class TitleAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'name', 'category', 'description', 'year', 'rating')
-    readonly_fields = ('rating',)
+    list_display = ('pk', 'name', 'category', 'description', 'year')
     search_fields = ('name',)
-
-
-# class TitleGenreAdmin(admin.ModelAdmin):
-#     list_display = ('pk', 'genre', 'title')
-#     search_fields = ('title',)
 
 
 class ReviewAdmin(admin.ModelAdmin):
@@ -58,6 +52,5 @@ admin.site.unregister(Group)
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Genre, GenreAdmin)
 admin.site.register(Title, TitleAdmin)
-# admin.site.register(TitleGenre, TitleGenreAdmin)
 admin.site.register(Review, ReviewAdmin)
 admin.site.register(Comment, CommentAdmin)
