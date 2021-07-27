@@ -162,7 +162,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         title_id = self.kwargs.get('title_id')
         title = get_object_or_404(Title, id=title_id)
-        return title.reviews.all()
+        return Review.objects.filter(title=title)
 
     def create(self, request, *args, **kwargs):
         title_id = self.kwargs.get('title_id')
