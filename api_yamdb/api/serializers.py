@@ -89,7 +89,8 @@ class ReviewSerializer(serializers.ModelSerializer):
         author_id = self.context.get('author_id')
         title_id = self.context.get('title_id')
         title = get_object_or_404(Title, id=title_id)
-        review = title.reviews.filter(author_id=author_id)
+        author = get_object_or_404(User, id=author_id)
+        review = title.reviews.filter(author=author)
         if self.context.get('method') == 'POST' and review:
             raise serializers.ValidationError('Вы уже оставляли отзыв')
         return super().validate(data)
