@@ -158,12 +158,20 @@ class CommentViewSet(viewsets.ModelViewSet):
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     permission_classes = (IsAdminModeratorAuthorOrCanCreateOrReadOnly,)
-    lookup_field = 'id'
 
     def get_queryset(self):
         title_id = self.kwargs.get('title_id')
         title = get_object_or_404(Title, id=title_id)
         return title.reviews.all()
+
+    def get_object(self):
+        id = self.kwargs.get('pk')
+        title_id = self.kwargs.get('title_id')
+        obj = get_object_or_404(
+            Review,
+            id=id, title_id=title_id)
+        self.check_object_permissions(self.request, obj)
+        return obj
 
     def create(self, request, *args, **kwargs):
         title_id = self.kwargs.get('title_id')
