@@ -22,7 +22,7 @@ from .serializers import (
 
 
 @api_view(('POST',))
-@permission_classes([permissions.AllowAny, ])
+@permission_classes([permissions.AllowAny])
 def create_user_or_get_code(request):
     """
     Create user with email from request an random password.
@@ -46,7 +46,7 @@ def create_user_or_get_code(request):
 
 
 @api_view(('POST',))
-@permission_classes([permissions.AllowAny, ])
+@permission_classes([permissions.AllowAny])
 def obtain_token(request):
     """
     Takes email and confirmation_code from request and
@@ -67,7 +67,6 @@ def obtain_token(request):
             status=status.HTTP_400_BAD_REQUEST)
 
     token = AccessToken.for_user(user)
-    user.is_active = True
     user.save()
     return Response({'token': str(token)},
                     status=status.HTTP_200_OK)
@@ -76,6 +75,7 @@ def obtain_token(request):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
     permission_classes = (IsAdmin,)
     lookup_field = 'username'
@@ -131,9 +131,9 @@ class TitleViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
 
     def get_serializer_class(self):
-        if self.action in ('create', 'update', 'partial_update'):
-            return TitleWriteSerializer
-        return TitleReadSerializer
+        if self.action in ('list', 'retrive'):
+            return TitleReadSerializer
+        return TitleWriteSerializer
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -164,14 +164,14 @@ class ReviewViewSet(viewsets.ModelViewSet):
         title = get_object_or_404(Title, id=title_id)
         return title.reviews.all()
 
-    def get_object(self):
-        id = self.kwargs.get('pk')
-        title_id = self.kwargs.get('title_id')
-        obj = get_object_or_404(
-            Review,
-            id=id, title_id=title_id)
-        self.check_object_permissions(self.request, obj)
-        return obj
+    # def get_object(self):
+    #     id = self.kwargs.get('pk')
+    #     title_id = self.kwargs.get('title_id')
+    #     obj = get_object_or_404(
+    #         Review,
+    #         id=id, title_id=title_id)
+    #     self.check_object_permissions(self.request, obj)
+    #     return obj
 
     def create(self, request, *args, **kwargs):
         title_id = self.kwargs.get('title_id')

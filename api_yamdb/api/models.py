@@ -1,13 +1,13 @@
-from django.contrib.auth.models import AbstractUser, PermissionsMixin
+from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-USER = 'user'
-MODERATOR = 'moderator'
-ADMIN = 'admin'
 
+class User(AbstractUser):
 
-class User(AbstractUser, PermissionsMixin):
+    USER = 'user'
+    MODERATOR = 'moderator'
+    ADMIN = 'admin'
 
     USER_ROLES = (
         (USER, 'User'),
@@ -15,41 +15,18 @@ class User(AbstractUser, PermissionsMixin):
         (ADMIN, 'Admin')
     )
 
-    username = models.CharField(
-        'Имя пользователя',
-        max_length=150,
-        unique=True,
-        help_text='Обязательное поле.Не более 150 символов.',
-        error_messages={
-            'unique': 'Пользователь с таким username уже существует.',
-        },
-    )
-
-    first_name = models.CharField(
-        'Имя',
-        max_length=150,
-        blank=True,
-        null=True)
-
-    last_name = models.CharField(
-        'Фамилия',
-        max_length=150,
-        blank=True,
-        null=True)
-
     email = models.EmailField(
         'email',
         unique=True,
         help_text='Email адрес. Должен быть уникальным.',
         error_messages={
             'unique': 'Пользователь с таким Email уже существует.',
-        },)
+        })
 
-    bio = models.TextField(
+    bio = models.CharField(
         'О себе',
         max_length=500,
         blank=True,
-        null=True,
         help_text='О себе')
 
     role = models.CharField(
@@ -59,44 +36,24 @@ class User(AbstractUser, PermissionsMixin):
         default=USER,
         help_text='Роль')
 
-    is_active = models.BooleanField(
-        'Активен',
-        default=1,
-        help_text='Активен или нет')
-
-    is_staff = models.BooleanField(
-        'Сотрудник',
-        default=0,
-        help_text='Является ли сотрудником')
-
     is_superuser = models.BooleanField(
         'Суперпользователь',
-        default=0,
+        default=False,
         help_text='Суперпользователь')
-
-    USERNAME_FIELD = 'username'
-    REQUIRED_FIELDS = ('email',)
 
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
         ordering = ('-id',)
 
-    def has_perm(self, perm, obj=None):
-        """Does the user have a specific permission?"""
-        return True
-
-    def has_module_perms(self, app_label):
-        """Does the user have permissions to view the app?"""
-        return True
-
     @property
     def is_moderator(self):
-        return self.role == MODERATOR
+        return self.role == self.MODERATOR
 
     @property
     def is_administrator(self):
-        return self.role == ADMIN
+        return (self.role == self.ADMIN
+                or self.is_superuser)
 
 
 class Category(models.Model):
@@ -113,7 +70,7 @@ class Category(models.Model):
 
 
 class Genre(models.Model):
-    name = models.CharField('Название', max_length=64,)
+    name = models.CharField('Название', max_length=64)
     slug = models.SlugField('Slug', unique=True)
 
     class Meta:

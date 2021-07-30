@@ -7,13 +7,20 @@ from .models import Category, Comment, Genre, Title, Review, User
 
 class UserAdmin(BaseUserAdmin):
     list_display = ('pk', 'username', 'email', 'first_name',
-                    'last_name', 'role', 'is_staff')
+                    'last_name', 'bio', 'role', 'is_staff', 'is_superuser')
     list_filter = ('is_staff',)
     fieldsets = (
         (None, {'fields': ('email', 'username', 'password')}),
-        ('Права и роли', {'fields': ('role', 'is_staff',)}),
+        ('Права и роли', {'fields': ('role', 'is_staff', 'is_superuser')}),
+        ('О пользователе', {'fields': ('bio',)}),
     )
-
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('email', 'username', 'password', 'is_staff',
+                       'is_active', 'is_superuser')}
+         ),
+    )
     search_fields = ('email',)
     ordering = ('email',)
 

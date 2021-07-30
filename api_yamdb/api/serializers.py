@@ -1,7 +1,5 @@
 from rest_framework import serializers
 
-from django.shortcuts import get_object_or_404
-
 from .models import Category, Comment, Genre, Review, Title, User
 
 
@@ -62,7 +60,6 @@ class TitleWriteSerializer(serializers.ModelSerializer):
         model = Title
         fields = ('id', 'name', 'year',
                   'description', 'genre', 'category')
-        read_only_fields = ('rating',)
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -73,7 +70,6 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ('id', 'text', 'author', 'pub_date')
         model = Comment
-        read_only_fields = ('review',)
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -86,11 +82,14 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
 
     def validate(self, data):
+        if self.context.get('method') != 'POST':
+            return super().validate(data)
+
         author_id = self.context.get('author_id')
         title_id = self.context.get('title_id')
-        title = get_object_or_404(Title, id=title_id)
-        author = get_object_or_404(User, id=author_id)
-        review = title.reviews.filter(author=author)
-        if self.context.get('method') == 'POST' and review:
+        review = Review.objects.filter(
+            author__id=author_id,
+            title__id=title_id).exists()
+        if review:
             raise serializers.ValidationError('Вы уже оставляли отзыв')
         return super().validate(data)

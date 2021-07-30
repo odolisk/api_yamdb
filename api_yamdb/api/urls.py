@@ -2,9 +2,10 @@ from rest_framework.routers import DefaultRouter
 
 from django.urls import include, path
 
-from .views import (CategoryViewSet, CommentViewSet, create_user_or_get_code,
-                    GenreViewSet, obtain_token, ReviewViewSet, TitleViewSet,
-                    UserViewSet)
+from .views import (
+    CategoryViewSet, CommentViewSet, GenreViewSet,
+    ReviewViewSet, TitleViewSet, UserViewSet,
+    create_user_or_get_code, obtain_token)
 
 API_VERSION = 'v1'
 
@@ -21,12 +22,12 @@ v1_router.register(
     r'titles/(?P<title_id>\d+)/reviews/(?P<review_id>\d+)/comments',
     CommentViewSet, basename='comments')
 
+auth_patterns = [
+    path('email/', create_user_or_get_code, name='create_user'),
+    path('token/', obtain_token, name='token_obtain'),
+]
+
 urlpatterns = (
-    path(f'{API_VERSION}/auth/email/',
-         create_user_or_get_code,
-         name='create_user'),
-    path(f'{API_VERSION}/auth/token/',
-         obtain_token,
-         name='token_obtain'),
+    path(f'{API_VERSION}/auth/', include(auth_patterns)),
     path(f'{API_VERSION}/', include(v1_router.urls)),
 )
