@@ -131,7 +131,8 @@ class TitleViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrReadOnly,)
 
     def get_serializer_class(self):
-        if self.action in ('list', 'retrive'):
+        print(self.action)
+        if self.action in ('list', 'retrieve'):
             return TitleReadSerializer
         return TitleWriteSerializer
 
@@ -163,21 +164,6 @@ class ReviewViewSet(viewsets.ModelViewSet):
         title_id = self.kwargs.get('title_id')
         title = get_object_or_404(Title, id=title_id)
         return title.reviews.all()
-
-    # def create(self, request, *args, **kwargs):
-    #     title_id = self.kwargs.get('title_id')
-    #     author_id = request.user.id
-    #     data = request.data
-    #     serializer = self.get_serializer(
-    #         data=data,
-    #         context={'author_id': author_id,
-    #                  'title_id': title_id,
-    #                  'method': request.method})
-    #     serializer.is_valid(raise_exception=True)
-    #     self.perform_create(serializer, title_id)
-    #     headers = self.get_success_headers(serializer.data)
-    #     return Response(serializer.data,
-    #                     status=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer, *args, **kwargs):
         title_id = self.kwargs.get('title_id')
