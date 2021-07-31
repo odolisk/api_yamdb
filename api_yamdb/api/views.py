@@ -164,53 +164,24 @@ class ReviewViewSet(viewsets.ModelViewSet):
         title = get_object_or_404(Title, id=title_id)
         return title.reviews.all()
 
-    # def get_object(self):
-    #     id = self.kwargs.get('pk')
+    # def create(self, request, *args, **kwargs):
     #     title_id = self.kwargs.get('title_id')
-    #     obj = get_object_or_404(
-    #         Review,
-    #         id=id, title_id=title_id)
-    #     self.check_object_permissions(self.request, obj)
-    #     return obj
+    #     author_id = request.user.id
+    #     data = request.data
+    #     serializer = self.get_serializer(
+    #         data=data,
+    #         context={'author_id': author_id,
+    #                  'title_id': title_id,
+    #                  'method': request.method})
+    #     serializer.is_valid(raise_exception=True)
+    #     self.perform_create(serializer, title_id)
+    #     headers = self.get_success_headers(serializer.data)
+    #     return Response(serializer.data,
+    #                     status=status.HTTP_201_CREATED, headers=headers)
 
-    def create(self, request, *args, **kwargs):
+    def perform_create(self, serializer, *args, **kwargs):
         title_id = self.kwargs.get('title_id')
-        author_id = request.user.id
-        data = request.data
-        serializer = self.get_serializer(
-            data=data,
-            context={'author_id': author_id,
-                     'title_id': title_id,
-                     'method': request.method})
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer, title_id)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data,
-                        status=status.HTTP_201_CREATED, headers=headers)
-
-    def perform_create(self, serializer, title_id):
+        title = get_object_or_404(Title, id=title_id)
         serializer.save(
             author=self.request.user,
-            title_id=title_id)
-
-    def update(self, request, *args, **kwargs):
-        title_id = self.kwargs.get('title_id')
-        author_id = request.user.id
-        data = request.data
-        serializer = self.get_serializer(
-            self.get_object(),
-            data=data,
-            context={'author_id': author_id,
-                     'title_id': title_id,
-                     'method': request.method}, partial=True)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer, title_id)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data,
-                        status=status.HTTP_200_OK, headers=headers)
-
-    def perform_update(self, serializer, title_id):
-        serializer.save(
-            author=self.request.user,
-            title_id=title_id
-        )
+            title=title)

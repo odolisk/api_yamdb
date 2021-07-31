@@ -144,6 +144,10 @@ class Review(models.Model):
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
         ordering = ('-id',)
+        constraints = (
+            models.UniqueConstraint(
+                fields=('author_id', 'title_id'),
+                name='unique-review'),)
 
     def __str__(self):
         return self.text[:25]
