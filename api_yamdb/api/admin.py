@@ -15,12 +15,9 @@ class UserAdmin(BaseUserAdmin):
         ('О пользователе', {'fields': ('bio',)}),
     )
     add_fieldsets = (
-        (None, {
-            'classes': ('wide',),
-            'fields': ('email', 'username', 'password', 'is_staff',
-                       'is_active', 'is_superuser')}
-         ),
-    )
+        (None, {'classes': ('wide',),
+                'fields': ('email', )}),
+    ) + BaseUserAdmin.add_fieldsets
     search_fields = ('email',)
     ordering = ('email',)
 

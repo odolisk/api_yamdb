@@ -4,7 +4,6 @@ from django.db import models
 
 
 class User(AbstractUser):
-
     USER = 'user'
     MODERATOR = 'moderator'
     ADMIN = 'admin'
@@ -23,9 +22,8 @@ class User(AbstractUser):
             'unique': 'Пользователь с таким Email уже существует.',
         })
 
-    bio = models.CharField(
+    bio = models.TextField(
         'О себе',
-        max_length=500,
         blank=True,
         help_text='О себе')
 
@@ -35,11 +33,6 @@ class User(AbstractUser):
         choices=USER_ROLES,
         default=USER,
         help_text='Роль')
-
-    is_superuser = models.BooleanField(
-        'Суперпользователь',
-        default=False,
-        help_text='Суперпользователь')
 
     class Meta:
         verbose_name = 'Пользователь'
@@ -146,7 +139,7 @@ class Review(models.Model):
         ordering = ('-id',)
         constraints = (
             models.UniqueConstraint(
-                fields=('author_id', 'title_id'),
+                fields=('author', 'title'),
                 name='unique-review'),)
 
     def __str__(self):

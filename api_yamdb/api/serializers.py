@@ -77,29 +77,19 @@ class ReviewSerializer(serializers.ModelSerializer):
         slug_field='username',
         read_only=True)
 
-    title = serializers.SlugRelatedField(
-        slug_field='id',
-        read_only=True)
-
     class Meta:
-        fields = ('id', 'author', 'title', 'text', 'score', 'pub_date')
+        fields = ('id', 'author', 'text', 'score', 'pub_date')
         model = Review
 
     def validate(self, data):
-        request = self.context.get('request')
-
-        if request and hasattr(request, 'method'):
-            method = request.method
-        else:
-            raise serializers.ValidationError('Неверный запрос')
-
-        if method != 'POST':
+        request = self.context['request']
+        if request.method != 'POST':
             return super().validate(data)
 
-        author_id = request.user.id
-        title_id = request.parser_context.get('kwargs').get('title_id')
+        author = request.user
+        title_id = request.parser_context['kwargs'].get('title_id')
         review = Review.objects.filter(
-            author__id=author_id,
+            author=author,
             title__id=title_id).exists()
         if review:
             raise serializers.ValidationError('Вы уже оставляли отзыв')
